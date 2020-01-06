@@ -1,12 +1,12 @@
 class Rental < ApplicationRecord
   belongs_to :client
   belongs_to :car_category
+  belongs_to :subsidiary
   enum status: { scheduled: 0, in_progress: 5 }
   validates :start_date, presence: { message: 'Data de início não pode ficar em branco' }
   validates :end_date, presence: { message: 'Data de fim não pode ficar em branco' }
   validate :end_date_must_be_greater_than_start_date,
            :start_date_equal_or_greater_than_today
-  # validate :cars_available, on: :create
   has_one :car_rental
   has_one :car, through: :car_rental
 
@@ -26,25 +26,16 @@ class Rental < ApplicationRecord
     end
   end
 
-  def cars_available
-    return unless start_date.present? && end_date.present?
+  def cars_available?
+    #carros disponiveis
+    car_models = CarModel.where(car_category: car_category)
+    total_cars = Car.where(car_model: car_models).count
 
-    if cars_available_at_date_range
-      errors.add(:category, 'Não há carros disponíveis na categoria escolhida.')
-    end
+    #locacoes agendadas
+    total_rentals = Rental.where(car_category: car_category, subsidiary: subsidiary)
+                          .where("start_date < ? AND end_date > ?", start_date, start_date)
+                          .count
+    (total_cars - total_rentals) > 0
   end
 
-  private
-
-  def cars_available_at_date_range
-    scheduled_rentals = Rental.where(car_category: car_category)
-                              .where(start_date: start_date..end_date)
-                              .or(Rental.where(car_category: car_category)
-                              .where(end_date: start_date..end_date))
-
-    available_cars = Car.joins(:car_model)
-                        .where(car_models: { car_category: car_category })
-
-    scheduled_rentals.count >= available_cars.count
-  end
 end

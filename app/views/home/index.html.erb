@@ -1,2 +1,12 @@
 <h1>Rental Cars</h1>
-<p>Bem vindo ao sistema de gestão de locação</p>
+<p>
+<%= t('welcome_message') %>
+
+</p>
+
+
+<%= I18n.localize Date.today, format: :long %>
+<br>
+<br>
+<%= number_to_currency 100 %>
+<%= distance_of_time_in_words 303213020 %>
